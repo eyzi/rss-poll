@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "RSS Poll",
   "main": "lib/index.js",
+  "types": "lib/types.d.ts",
   "author": "eyzi <contact@eyzi.dev>",
   "license": "MIT",
   "scripts": {
