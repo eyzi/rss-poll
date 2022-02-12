@@ -23,11 +23,12 @@ class Poller extends EventEmitter {
     this.config = config
     this.lastGuid = null
     this.status = PollerStatus.IDLE
+    this.tryCheck()
+    this.emit("ready")
     this.interval = setInterval(
       this.tryCheck.bind(this),
       this.config.interval ?? 60 * 1000
     )
-    this.emit("ready")
   }
 
   handleNewFeed (items: Feed[]): void {
@@ -40,8 +41,20 @@ class Poller extends EventEmitter {
     return this.handleNewFeed(itemsCopy)
   }
 
+  lastGuidIndex (items: Feed[]) {
+		let index
+		for (index = 0; index < items.length; index++) {
+			if (items[index].guid === this.lastGuid) return index
+		}
+		return -1
+	}
+
   trimSeen (items: Feed[]): Feed[] {
-    return [] as Feed[]
+    const itemsCopy = [...items]
+    const lastIndex = this.lastGuidIndex(items)
+    if (lastIndex <= 0) return []
+    itemsCopy.splice(lastIndex)
+    return itemsCopy
   }
 
   async checkNewFeed () {
@@ -54,6 +67,7 @@ class Poller extends EventEmitter {
     if (!this.lastGuid) {
       const firstItem = feed.items.shift() as Feed
       this.setLastGuid(firstItem.guid)
+      this.emit("first-fetch", firstItem)
     } else {
       const unseenFeed = this.trimSeen(feed.items as Feed[])
       this.handleNewFeed(unseenFeed)
@@ -67,14 +81,17 @@ class Poller extends EventEmitter {
       case PollerStatus.CHECKING:
         this.status = PollerStatus.CHECKING
         this.emit("checking")
+        this.emit("status", "checking")
         break
       case PollerStatus.IDLE:
         this.status = PollerStatus.IDLE
         this.emit("idle")
+        this.emit("status", "idle")
         break
       case PollerStatus.STOPPED:
         this.status = PollerStatus.STOPPED
         this.emit("stopped")
+        this.emit("status", "stopped")
         break
     }
   }

@@ -3,7 +3,7 @@ export type GUID = string | null
 export type ParserConfig = {
   timeout?: number
   customFields?: {
-    item: string[]
+    item: string[][]
   }
 }
 
